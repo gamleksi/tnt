@@ -22,10 +22,11 @@ class BaseVisdomLogger(Logger):
     def viz(self):
         return self._viz
 
-    def __init__(self, fields=None, win=None, env=None, opts={}, port=8097, server="localhost"):
+    def __init__(self, fields=None, win=None, env=None, nrow=None, opts={}, port=8097, server="localhost"):
         super(BaseVisdomLogger, self).__init__(fields)
         self.win = win
         self.env = env
+        self.nrow = nrow
         self.opts = opts
         self._viz = visdom.Visdom(server="http://" + server, port=port)
 
@@ -43,6 +44,7 @@ class BaseVisdomLogger(Logger):
             self.win = vis_fn(*args,
                               win=self.win,
                               env=self.env,
+                              nrow=self.nrow,
                               opts=self.opts,
                               **kwargs)
         return _viz_logger
@@ -79,7 +81,7 @@ class VisdomLogger(BaseVisdomLogger):
         A generic Visdom class that works with the majority of Visdom plot types.
     '''
 
-    def __init__(self, plot_type, fields=None, win=None, env=None, opts={}, port=8097, server="localhost"):
+    def __init__(self, plot_type, fields=None, win=None, env=None, nrow=None, opts={}, port=8097, server="localhost"):
         '''
             Args:
                 fields: Currently unused
@@ -96,7 +98,7 @@ class VisdomLogger(BaseVisdomLogger):
                 >>> hist_logger = VisdomLogger('histogram', , opts=dict(title='Random!', numbins=20))
                 >>> hist_logger.log(hist_data)
         '''
-        super(VisdomLogger, self).__init__(fields, win, env, opts, port, server)
+        super(VisdomLogger, self).__init__(fields=fields, win=win, env=env, nrow=nrow, opts=opts, port=port, server=server)
         self.plot_type = plot_type
         self.chart = getattr(self.viz, plot_type)
         self.viz_logger = self._viz_prototype(self.chart)
@@ -119,7 +121,7 @@ class VisdomPlotLogger(BaseVisdomLogger):
                 >>> scatter_logger.log(stats['epoch'], loss_meter.value()[0], name="train")
                 >>> scatter_logger.log(stats['epoch'], loss_meter.value()[0], name="test")
         '''
-        super(VisdomPlotLogger, self).__init__(fields, win, env, opts, port, server)
+        super(VisdomPlotLogger, self).__init__(fields=fields, win=win, env=env, opts=opts,  port=port, server=server)
         valid_plot_types = {
             "scatter": self.viz.scatter,
             "line": self.viz.line}
@@ -184,7 +186,7 @@ class VisdomTextLogger(BaseVisdomLogger):
     def __init__(self, fields=None, win=None, env=None, opts={}, update_type=valid_update_types[0],
                  port=8097, server="localhost"):
 
-        super(VisdomTextLogger, self).__init__(fields, win, env, opts, port, server)
+        super(VisdomTextLogger, self).__init__(fields=fields, win=win, env=env, opts=opts)
         self.text = ''
 
         if update_type not in self.valid_update_types:
